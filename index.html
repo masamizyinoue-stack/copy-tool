@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.40</title>
+<title>Kopipe_Tool 製品版Vr1.1.41</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -272,6 +272,17 @@ body{
 }
 .io-btn:hover{opacity:0.8;}
 
+/* 仮登録ボタン */
+.btn-temp{
+    display:flex;align-items:center;gap:4px;
+    background:rgba(210,153,34,0.15);
+    border:1px solid rgba(210,153,34,0.5);color:var(--yellow);
+    padding:4px 10px;border-radius:6px;
+    font-size:11px;font-family:'Noto Sans JP',sans-serif;font-weight:700;
+    cursor:pointer;transition:0.2s;white-space:nowrap;letter-spacing:0.04em;
+    flex-shrink:0;
+}
+.btn-temp:hover{background:rgba(210,153,34,0.3);border-color:var(--yellow);}
 /* 新規登録ボタン */
 .btn-new{
     display:flex;align-items:center;gap:7px;
@@ -907,6 +918,9 @@ body.compact .card-num-badge{font-size:10px;padding:1px 5px;bottom:5px;right:5px
 
         <button class="btn-new" onclick="toggleEditor()">
             <span style="font-size:20px;line-height:1;text-shadow:0 0 8px rgba(255,255,255,0.6);">＋</span>新規登録
+        </button>
+        <button class="btn-temp" onclick="openTempRegister()" title="ラベル①に&quot;仮登録&quot;を入れて登録パネルを開く">
+            &#9998; 仮登録
         </button>
 
         <div class="search-wrap">
@@ -1602,6 +1616,16 @@ function toggleEditor(){
         if(document.getElementById("editIdx").value!=="-1") clearForm();
         p.style.display='none';
     }
+}
+/* 仮登録：ラベル①に「仮登録」を入れてエディターを開く */
+function openTempRegister(){
+    clearForm();
+    document.getElementById('txtA').value='仮登録';
+    fcUpdate('txtA');
+    const p=document.getElementById('editorPanel');
+    p.style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+    document.getElementById('txtBody').focus();
 }
 function forceCloseEditor(){
     stopEditTracking();
