@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.41</title>
+<title>Kopipe_Tool 製品版Vr1.1.42</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -1287,7 +1287,7 @@ function showToast(msg, type='success'){
 /* ══════════════════════════════════════
    変数置換
 ══════════════════════════════════════ */
-function resolveVars(text, copyCount){
+function resolveVars(text){
     const d=new Date();
     const yyyy=d.getFullYear();
     const mm=String(d.getMonth()+1).padStart(2,'0');
@@ -1474,6 +1474,18 @@ function toggleCompact(){
     document.body.classList.toggle('compact', isCompact);
     document.getElementById('btnCompact').classList.toggle('active', isCompact);
     localStorage.setItem(COMPACT_KEY, isCompact);
+    // コンパクトモードに切り替えた時、展開済みpreを折りたたみ状態に戻す
+    if(isCompact){
+        document.querySelectorAll('#container pre.expanded').forEach(pre=>{
+            pre.classList.remove('expanded');
+        });
+        // 展開ボタンのテキストも元に戻す
+        document.querySelectorAll('#container .btn-expand').forEach(btn=>{
+            if(btn.textContent.startsWith('▲')){
+                btn.textContent = btn.textContent.replace(/^▲ 簡易表示/, '▼ 全文表示');
+            }
+        });
+    }
 }
 
 /* ─ ショートカット一覧モーダル ─ */
@@ -1495,16 +1507,6 @@ function save(skipUndo){
     autoBackupV2();
     // データ変更のたびにファイルにも保存（シークレット中も保存）
     bkSave(true);
-}
-/* 自動バックアップ：1時間ごとに最新データを保存 */
-function autoBackup(){
-    const now=Date.now();
-    const last=parseInt(localStorage.getItem('copy_tool_backup_ts')||'0');
-    if(now-last < 3600000) return; // 1時間未満はスキップ
-    const d=new Date();
-    const key=`kopipe_auto_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ts:now,data:listData}));
-    localStorage.setItem('copy_tool_backup_ts', String(now));
 }
 /* Undo/Redo ボタン表示更新 */
 function updateUndoRedoBtns(){
@@ -1578,7 +1580,18 @@ function stopEditTracking(){
 /* 閉じるボタン：未保存変更があればカスタムモーダル */
 function tryCloseEditor(){
     const editIdx = parseInt(document.getElementById("editIdx").value);
-    if(editIdx < 0){ forceCloseEditor(); return; } // 新規登録はそのまま閉じる
+    if(editIdx < 0){
+        // 新規登録時：入力内容があれば確認する
+        const hasInput = document.getElementById('txtBody').value.trim() ||
+                         document.getElementById('txtA').value.trim() ||
+                         document.getElementById('txtB').value.trim();
+        if(hasInput){
+            document.getElementById('closeConfirmModal').classList.add('open');
+        } else {
+            forceCloseEditor();
+        }
+        return;
+    }
     if(_isDirtyEdit){
         document.getElementById('closeConfirmModal').classList.add('open');
     } else {
@@ -1653,6 +1666,7 @@ function handleSave(){
         listData[editIdx]={...listData[editIdx],text,a,b,color:selectedColor};
         showToast('✏️ 更新しました');
     }
+    stopEditTracking(); // 変更追跡を停止してリスナーを解除
     save();clearForm();
     document.getElementById("editorPanel").style.display='none';
     draw();
@@ -2165,7 +2179,7 @@ function draw(){
         pre.addEventListener('click', e=>{
             e.stopPropagation();
             hidePrePreview(); // クリック時にプレビューを即消去
-            const resolved=resolveVars(item.text, item.copyCount||0);
+            const resolved=resolveVars(item.text);
             navigator.clipboard.writeText(resolved).then(()=>{
                 const cpBtn=card.querySelector('.btn-copy');
                 if(cpBtn&&!cpBtn.classList.contains('copied')){
@@ -2192,7 +2206,7 @@ function draw(){
 
         // 表示テキストを返す（expanded=trueで全文、falseで簡易）
         function getDisplayText(expanded){
-            const resolved=hasToday ? resolveVars(item.text, item.copyCount||0) : item.text;
+            const resolved=hasToday ? resolveVars(item.text) : item.text;
             if(charCount<=LIMIT) return resolved;
             return expanded ? resolved : resolved.slice(0,LIMIT)+'…';
         }
@@ -2247,7 +2261,7 @@ function draw(){
         cpBtn.textContent="コピー";
         cpBtn.onclick=(e)=>{
             e.stopPropagation();
-            const resolved=resolveVars(item.text, item.copyCount||0);
+            const resolved=resolveVars(item.text);
             navigator.clipboard.writeText(resolved).then(()=>{
                 cpBtn.textContent="✓ 完了";cpBtn.classList.add("copied");
                 listData[item.originalIndex].copyCount=(listData[item.originalIndex].copyCount||0)+1;
@@ -2562,9 +2576,18 @@ function bulkTrash(){
         const item = listData[oi];
         if(item) trashData.push({...item, _deletedAt: Date.now()});
     });
-    indices.forEach(oi=>listData.splice(oi,1));
-    cardDisplayOrder=null;
-    localStorage.removeItem(CARD_ORDER_KEY);
+    // 大きい順に削除しながらcardDisplayOrderを更新（単体削除と同様）
+    indices.forEach(oi=>{
+        listData.splice(oi,1);
+        if(cardDisplayOrder){
+            cardDisplayOrder = cardDisplayOrder
+                .filter(o=>o!==oi).map(o=>o>oi?o-1:o);
+        }
+    });
+    if(cardDisplayOrder){
+        if(cardDisplayOrder.length > 0) localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(cardDisplayOrder));
+        else { cardDisplayOrder=null; localStorage.removeItem(CARD_ORDER_KEY); }
+    }
     bulkSelected.clear();
     document.body.classList.remove('has-selection');
     save(); draw();
@@ -2638,13 +2661,6 @@ function applyBulkLabel(){
 /* ══════════════════════════════════════
    📤 カード単体書き出し・共有
 ══════════════════════════════════════ */
-function openCardShareModal(oi){
-    const item = listData[oi];
-    if(!item) return;
-    exportCardsAsJson([item]);
-}
-function closeCardShareModal(){}
-function copyCardShareText(){}
 /* 複数選択カードの書き出し */
 function bulkExportCards(){
     if(!bulkSelected.size){ showToast('カードを選択してください','warn'); return; }
@@ -2675,19 +2691,6 @@ function exportCardsAsJson(items){
 
 /* bulkDuplicate廃止 */
 function esc(str){const p=document.createElement("p");p.textContent=str;return p.innerHTML;}
-
-/* ④ エクスポート */
-function exportData(){
-    const json=JSON.stringify(listData,null,2);
-    const blob=new Blob([json],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    const d=new Date();
-    a.download=`kopipe_backup_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
 
 /* ④ インポート */
 function openImportModal(){document.getElementById("importModal").classList.add('open');}
