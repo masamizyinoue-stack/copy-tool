@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.42</title>
+<title>Kopipe_Tool 製品版Vr1.1.44</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -780,6 +780,17 @@ body.in-secret .section-label{color:#c8a000;}
 .card.bulk-checked .card-check-wrap .card-check-visual{ opacity:1; }
 body.has-selection .card-check-wrap .card-check-visual{ opacity:0.65; }
 body.has-selection .card.bulk-checked .card-check-wrap .card-check-visual{ opacity:1; }
+/* ── 最終編集日バッジ ── */
+.card-edit-date{
+    position:absolute;top:34px;right:10px;
+    font-size:12px;line-height:1.2;
+    color:var(--text2);opacity:0.55;
+    font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:0.04em;
+    text-align:right;white-space:nowrap;
+    pointer-events:none;user-select:none;
+}
+.card:hover .card-edit-date{ opacity:1; }
+body.compact .card-edit-date{ top:29px;right:6px;font-size:10px; }
 /* ── 閉じる確認モーダル ── */
 .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:800;align-items:center;justify-content:center;}
 .confirm-overlay.open{display:flex;}
@@ -1660,10 +1671,10 @@ function handleSave(){
     const editIdx=parseInt(document.getElementById("editIdx").value);
     if(!text&&!a&&!b)return;
     if(editIdx===-1){
-        listData.push({text,a,b,pinned:false,ts:Date.now(),copyCount:0,color:selectedColor});
+        listData.push({text,a,b,pinned:false,ts:Date.now(),updatedAt:Date.now(),copyCount:0,color:selectedColor});
         showToast('✅ 登録しました');
     }else{
-        listData[editIdx]={...listData[editIdx],text,a,b,color:selectedColor};
+        listData[editIdx]={...listData[editIdx],text,a,b,color:selectedColor,updatedAt:Date.now()};
         showToast('✏️ 更新しました');
     }
     stopEditTracking(); // 変更追跡を停止してリスナーを解除
@@ -2048,8 +2059,7 @@ function draw(){
         const chkVisual=document.createElement('div');
         chkVisual.className='card-check-visual';
         chkWrap.append(chk, chkVisual);
-        chk.addEventListener('change', e=>{
-            e.stopPropagation();
+        chk.addEventListener('change', e=>{            e.stopPropagation();
             if(chk.checked){
                 bulkSelected.add(item.originalIndex);
 
@@ -2321,7 +2331,20 @@ function draw(){
         shBtn.onclick=(e)=>{ e.stopPropagation(); exportCardsAsJsonPicker([listData[item.originalIndex]]); };
 
         footer.append(badge,cpBtn,edBtn,shBtn,deBtn);
-        card.append(chkWrap,pin,tags,pre);
+
+        /* 最終編集日バッジ（チェック欄の下）*/
+        const editDateEl = document.createElement('div');
+        editDateEl.className = 'card-edit-date';
+        const _dateTs = item.updatedAt || item.ts || null;
+        if(_dateTs){
+            const _d = new Date(_dateTs);
+            const _yy = String(_d.getFullYear()).slice(2);
+            const _mm = String(_d.getMonth()+1).padStart(2,'0');
+            const _dd = String(_d.getDate()).padStart(2,'0');
+            editDateEl.textContent = `${_yy}/${_mm}/${_dd}`;
+        }
+
+        card.append(chkWrap, editDateEl, pin, tags, pre);
         if(expandBtn) card.append(expandBtn);
 
         card.append(footer);
@@ -2424,7 +2447,7 @@ function startInlineEdit(card, item){
         const newA    = inA.value;
         const newB    = inB.value;
         if(!newText && !newA && !newB){ cancelInlineEdit(card); return; }
-        listData[item.originalIndex] = {...listData[item.originalIndex], text:newText, a:newA, b:newB};
+        listData[item.originalIndex] = {...listData[item.originalIndex], text:newText, a:newA, b:newB, updatedAt:Date.now()};
         save();
         showToast('✏️ 更新しました');
         draw();
