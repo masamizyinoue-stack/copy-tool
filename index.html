@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.44</title>
+<title>Kopipe_Tool 製品版Vr1.1.45</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -419,7 +419,7 @@ textarea{width:100%;min-height:80px;padding:12px;resize:none;overflow-y:auto;lin
 body.compact #container{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px;}
 body.compact .card{padding:8px 10px;border-width:2px;}
 body.compact .card:hover{transform:translateY(-1px);}
-body.compact .tag-list{margin-bottom:5px;gap:1px;padding-right:56px;}
+body.compact .tag-list{margin-bottom:5px;gap:1px;padding-right:74px;}
 body.compact .tag-item{font-size:11px;min-height:16px;}
 /* コンパクト時は展開ボタン非表示（max-heightで切れるが操作不可） */
 body.compact .btn-expand{ display:none !important; }
@@ -541,7 +541,7 @@ body.compact .main-wrap{padding:8px 16px;}
 
 .tag-list{
     display:flex;flex-direction:column;gap:3px;
-    margin-bottom:10px;padding-right:62px; /* チェック枠(right:36+20)+ピン(right:10+17)に被らないよう余白確保 */
+    margin-bottom:10px;padding-right:86px; /* ロック(right:62+20)+チェック(right:36+20)+ピン(right:10+17)を回避 */
 }
 .tag-item{
     display:flex;align-items:center;gap:5px;
@@ -791,6 +791,67 @@ body.has-selection .card.bulk-checked .card-check-wrap .card-check-visual{ opaci
 }
 .card:hover .card-edit-date{ opacity:1; }
 body.compact .card-edit-date{ top:29px;right:6px;font-size:10px; }
+
+/* ══════════════════════════════════════
+   🔒 カードロック機能
+══════════════════════════════════════ */
+.lock-icon{
+    position:absolute;top:8px;right:62px;
+    font-size:14px;line-height:1;cursor:pointer;
+    opacity:0.18;transition:opacity 0.2s,transform 0.2s;z-index:11;
+    width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+    user-select:none;
+}
+.lock-icon:hover{opacity:1;transform:scale(1.18);}
+.card:hover .lock-icon{opacity:0.55;}
+.lock-icon.locked{opacity:0.9;filter:drop-shadow(0 0 3px rgba(210,153,34,0.7));}
+body.compact .lock-icon{top:5px;right:52px;font-size:12px;}
+
+/* ロック中カードの外観 */
+.card.is-locked{border-color:rgba(200,155,0,0.28)!important;background:var(--bg2);}
+.card.is-locked:hover{transform:translateY(-1px)!important;box-shadow:0 4px 16px var(--card-shadow)!important;}
+.card.is-locked .btn-edit,.card.is-locked .btn-delete-card{
+    opacity:0.22;pointer-events:none;cursor:not-allowed;
+}
+.card.is-locked .card-check-wrap{opacity:0.15;pointer-events:none;}
+.card.is-locked pre{cursor:pointer;} /* コピーは許可 */
+
+/* ロックモーダル */
+.lock-modal-overlay{
+    display:none;position:fixed;inset:0;
+    background:rgba(0,0,0,0.72);z-index:850;
+    align-items:center;justify-content:center;backdrop-filter:blur(3px);
+}
+.lock-modal-overlay.open{display:flex;}
+.lock-modal-box{
+    background:var(--bg2);border:2px solid var(--card-border);
+    border-radius:10px;padding:26px 28px;width:90%;max-width:330px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.65);text-align:center;
+}
+.lock-modal-icon{font-size:30px;margin-bottom:8px;line-height:1;}
+.lock-modal-title{
+    font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+    letter-spacing:0.12em;color:var(--text);margin-bottom:5px;
+}
+.lock-modal-desc{font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;}
+.lock-modal-sublabel{font-size:11px;color:var(--text2);margin:10px 0 4px;text-align:left;}
+.lock-modal-btns{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.lock-pin-input{
+    width:100%;padding:10px 14px;
+    background:var(--pre-bg);border:1px solid var(--border);
+    border-radius:6px;color:var(--text);
+    font-size:22px;font-family:'Rajdhani',sans-serif;font-weight:700;
+    letter-spacing:0.35em;text-align:center;
+    outline:none;transition:border-color 0.2s;box-sizing:border-box;
+}
+.lock-pin-input:focus{border-color:var(--accent);}
+.lock-pin-input.error{border-color:var(--red)!important;animation:pinShake 0.3s ease;}
+.lock-pin-error{font-size:11px;color:var(--red);margin-top:7px;min-height:16px;}
+@keyframes pinShake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-7px);}
+    75%{transform:translateX(7px);}
+}
 /* ── 閉じる確認モーダル ── */
 .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:800;align-items:center;justify-content:center;}
 .confirm-overlay.open{display:flex;}
@@ -1199,7 +1260,51 @@ body.compact .card-num-badge{font-size:10px;padding:1px 5px;bottom:5px;right:5px
 
 </div>
 
-<!-- ④ インポートモーダル -->
+<!-- 🔒 カードロック設定モーダル -->
+<div class="lock-modal-overlay" id="lockModal">
+    <div class="lock-modal-box">
+        <!-- Panel A: ロック方法選択 -->
+        <div id="lockPanelA">
+            <div class="lock-modal-icon">🔒</div>
+            <div class="lock-modal-title">CARD LOCK</div>
+            <div class="lock-modal-desc">このカードの編集・削除を保護します</div>
+            <div class="lock-modal-btns">
+                <button class="btn btn-save" onclick="lockNoPIN()">🔓 PINなしでロック</button>
+                <button class="btn btn-save" onclick="showPinSetup()" style="background:rgba(210,153,34,0.15);border-color:rgba(210,153,34,0.4);color:var(--yellow);">🔑 4桁PINを設定してロック</button>
+                <button class="btn btn-cancel" onclick="closeLockModal()">キャンセル</button>
+            </div>
+        </div>
+        <!-- Panel B: PIN設定 -->
+        <div id="lockPanelB" style="display:none;">
+            <div class="lock-modal-icon">🔑</div>
+            <div class="lock-modal-title">SET PIN</div>
+            <div class="lock-modal-desc">4桁の数字PINを設定してください</div>
+            <input type="password" id="lockPinInput" class="lock-pin-input" maxlength="4" placeholder="● ● ● ●" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+            <div class="lock-modal-sublabel">確認入力</div>
+            <input type="password" id="lockPinConfirm" class="lock-pin-input" maxlength="4" placeholder="● ● ● ●" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password">
+            <div class="lock-pin-error" id="lockPinError"></div>
+            <div class="lock-modal-btns">
+                <button class="btn btn-save" onclick="applyLockWithPin()">🔒 このPINでロック</button>
+                <button class="btn btn-cancel" onclick="showLockPanelA()">← 戻る</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔓 カードロック解除モーダル -->
+<div class="lock-modal-overlay" id="unlockModal">
+    <div class="lock-modal-box">
+        <div class="lock-modal-icon">🔓</div>
+        <div class="lock-modal-title">UNLOCK CARD</div>
+        <div class="lock-modal-desc" id="unlockModalDesc">PINを入力してください</div>
+        <input type="password" id="unlockPinInput" class="lock-pin-input" maxlength="4" placeholder="● ● ● ●" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+        <div class="lock-pin-error" id="unlockPinError"></div>
+        <div class="lock-modal-btns">
+            <button class="btn btn-save" onclick="tryUnlockWithPin()">🔓 解除する</button>
+            <button class="btn btn-cancel" onclick="closeUnlockModal()">キャンセル</button>
+        </div>
+    </div>
+</div>
 <div class="modal-overlay" id="importModal">
     <div class="modal-box">
         <div class="modal-title">⬇ データ読み込み（JSON）</div>
@@ -1348,6 +1453,8 @@ document.addEventListener('keydown',e=>{
 
     // ── モーダルを閉じる（Esc）──
     if(e.key === 'Escape'){
+        if(document.getElementById('lockModal').classList.contains('open'))   { closeLockModal(); return; }
+        if(document.getElementById('unlockModal').classList.contains('open')) { closeUnlockModal(); return; }
         if(document.getElementById('scModal').classList.contains('open'))     { closeScModal(); return; }
         if(document.getElementById('importModal').classList.contains('open')) { closeImportModal(); return; }
         if(document.getElementById('pwModal').classList.contains('open'))     { closePwModal(); return; }
@@ -2044,9 +2151,9 @@ function draw(){
 
     filtered.forEach(item=>{
         const card=document.createElement("div");
-        card.className=`card${item.pinned?' is-pinned':''}`;
+        card.className=`card${item.pinned?' is-pinned':''}${item.locked?' is-locked':''}`;
         if(item.color) card.setAttribute('data-color',item.color);
-        card.setAttribute('draggable','true');
+        card.setAttribute('draggable', item.locked ? 'false' : 'true');
         card.dataset.oi=item.originalIndex;
 
         // 複数選択チェックボックス（カスタムデザイン：右上・ピンの左）
@@ -2059,7 +2166,9 @@ function draw(){
         const chkVisual=document.createElement('div');
         chkVisual.className='card-check-visual';
         chkWrap.append(chk, chkVisual);
-        chk.addEventListener('change', e=>{            e.stopPropagation();
+        chk.addEventListener('change', e=>{
+            if(item.locked){ e.preventDefault(); chk.checked=false; return; } // ロック中は選択不可
+            e.stopPropagation();
             if(chk.checked){
                 bulkSelected.add(item.originalIndex);
 
@@ -2072,10 +2181,22 @@ function draw(){
         });
         card.classList.toggle('bulk-checked',bulkSelected.has(item.originalIndex));
 
+        /* ロックアイコン */
+        const lockIcon=document.createElement('div');
+        lockIcon.className='lock-icon'+(item.locked?' locked':'');
+        lockIcon.textContent=item.locked?'🔒':'🔓';
+        lockIcon.title=item.locked?'ロック中（クリックして解除）':'クリックしてロック';
+        lockIcon.onclick=(e)=>{
+            e.stopPropagation();
+            if(item.locked) openUnlockModal(item.originalIndex);
+            else openLockModal(item.originalIndex);
+        };
+
         /* カードクリック → 選択状態のみ更新（コピーはpre枠クリック） */
         card.onclick=(e)=>{
-            // フッターボタン・ピン・展開ボタン・チェック枠のクリックは無視
-            if(e.target.closest('.footer-btn,.pin-icon,.btn-expand,.card-check-wrap')) return;
+            // フッターボタン・ピン・展開ボタン・チェック枠・ロックアイコンのクリックは無視
+            if(e.target.closest('.footer-btn,.pin-icon,.btn-expand,.card-check-wrap,.lock-icon')) return;
+            if(item.locked) return; // ロック中は選択不可
 
             const oi = item.originalIndex;
             // ワンクリック → チェック選択トグル
@@ -2096,13 +2217,15 @@ function draw(){
 
         /* ダブルクリック → エントリーエディターで編集 */
         card.addEventListener('dblclick', e=>{
-            if(e.target.closest('.footer-btn,.pin-icon,.btn-expand')) return;
+            if(e.target.closest('.footer-btn,.pin-icon,.btn-expand,.lock-icon')) return;
+            if(item.locked) return; // ロック中は編集不可
             e.stopPropagation();
             card.querySelector('.btn-edit')?.click();
         });
 
         /* カードD&D */
         card.addEventListener('dragstart',e=>{
+            if(item.locked){ e.preventDefault(); return; } // ロック中はD&D不可
             card.classList.add('dragging-card');
             e.dataTransfer.setData('text/plain','card|'+item.originalIndex);
             e.dataTransfer.effectAllowed='move';
@@ -2344,7 +2467,7 @@ function draw(){
             editDateEl.textContent = `${_yy}/${_mm}/${_dd}`;
         }
 
-        card.append(chkWrap, editDateEl, pin, tags, pre);
+        card.append(chkWrap, lockIcon, editDateEl, pin, tags, pre);
         if(expandBtn) card.append(expandBtn);
 
         card.append(footer);
@@ -2366,6 +2489,7 @@ function draw(){
 ══════════════════════════════════════ */
 function startInlineEdit(card, item){
     if(card.classList.contains('inline-editing')) return;
+    if(item.locked) return; // ロック中は編集不可
     card.classList.add('inline-editing');
     card.setAttribute('draggable','false');
 
@@ -2594,7 +2718,13 @@ function clearBulkSelect(){
     draw();
 }
 function bulkTrash(){
-    const indices = [...bulkSelected].sort((a,b)=>b-a); // 大きい順に削除
+    const allIndices = [...bulkSelected].sort((a,b)=>b-a);
+    // ロック中カードをスキップ
+    const skipped = allIndices.filter(oi=>listData[oi]?.locked);
+    const indices  = allIndices.filter(oi=>!listData[oi]?.locked);
+    if(indices.length === 0){
+        showToast(`🔒 ロック中カードはスキップされました（${skipped.length}件）`,'warn'); return;
+    }
     indices.forEach(oi=>{
         const item = listData[oi];
         if(item) trashData.push({...item, _deletedAt: Date.now()});
@@ -2614,7 +2744,9 @@ function bulkTrash(){
     bulkSelected.clear();
     document.body.classList.remove('has-selection');
     save(); draw();
-    showToast(`🗑 ${indices.length}件をゴミ箱へ移動しました`,'warn');
+    let msg = `🗑 ${indices.length}件をゴミ箱へ移動しました`;
+    if(skipped.length > 0) msg += `（🔒ロック中 ${skipped.length}件 スキップ）`;
+    showToast(msg,'warn');
 }
 /* ── 一括色変更（パレットモーダル） ── */
 let _bulkSelectedColor = null;
@@ -2645,13 +2777,19 @@ function closeBulkColorModal(){
 }
 function applyBulkColor(){
     if(!_bulkSelectedColor){ showToast('色を選択してください','warn'); return; }
-    const cnt = bulkSelected.size;
-    bulkSelected.forEach(oi=>{ if(listData[oi]) listData[oi].color = _bulkSelectedColor; });
+    let skipped = 0;
+    bulkSelected.forEach(oi=>{
+        if(listData[oi]?.locked){ skipped++; return; }
+        if(listData[oi]) listData[oi].color = _bulkSelectedColor;
+    });
+    const cnt = bulkSelected.size - skipped;
     bulkSelected.clear();
     document.body.classList.remove('has-selection');
     closeBulkColorModal();
     save(); draw();
-    showToast(`🎨 ${cnt}件の色を変更しました`);
+    let msg = `🎨 ${cnt}件の色を変更しました`;
+    if(skipped > 0) msg += `（🔒ロック中 ${skipped}件 スキップ）`;
+    showToast(msg);
 }
 
 /* ── 一括ラベル変更（モーダル） ── */
@@ -2668,17 +2806,21 @@ function applyBulkLabel(){
     const newA = document.getElementById('bulkLabelA').value.trim();
     const newB = document.getElementById('bulkLabelB').value.trim();
     if(!newA && !newB){ showToast('少なくとも1つのラベルを入力してください','warn'); return; }
-    const cnt = bulkSelected.size;
+    let skipped = 0;
     bulkSelected.forEach(oi=>{
+        if(listData[oi]?.locked){ skipped++; return; }
         if(!listData[oi]) return;
         if(newA !== '') listData[oi].a = newA;
         if(newB !== '') listData[oi].b = newB;
     });
+    const cnt = bulkSelected.size - skipped;
     bulkSelected.clear();
     document.body.classList.remove('has-selection');
     closeBulkLabelModal();
     save(); draw();
-    showToast(`🏷 ${cnt}件のラベルを変更しました`);
+    let msg = `🏷 ${cnt}件のラベルを変更しました`;
+    if(skipped > 0) msg += `（🔒ロック中 ${skipped}件 スキップ）`;
+    showToast(msg);
 }
 
 /* ══════════════════════════════════════
@@ -2714,6 +2856,130 @@ function exportCardsAsJson(items){
 
 /* bulkDuplicate廃止 */
 function esc(str){const p=document.createElement("p");p.textContent=str;return p.innerHTML;}
+
+/* ══════════════════════════════════════
+   🔒 カードロック機能
+══════════════════════════════════════ */
+let _lockTargetOi = null;
+
+/* 軽量ハッシュ（PIN平文保存禁止・最低限難読化） */
+function hashPin(pin){
+    let h = 0x4B6F7069; // seed: "Kopi"
+    for(let i = 0; i < pin.length; i++){
+        h = (Math.imul(31, h) ^ pin.charCodeAt(i)) >>> 0;
+        h = (h ^ (h >>> 16)) >>> 0;
+        h = Math.imul(h, 0x45d9f3b) >>> 0;
+        h = (h ^ (h >>> 16)) >>> 0;
+    }
+    return h.toString(16).padStart(8,'0');
+}
+
+/* ─ ロック設定モーダル ─ */
+function openLockModal(oi){
+    _lockTargetOi = oi;
+    document.getElementById('lockPinInput').value  = '';
+    document.getElementById('lockPinConfirm').value = '';
+    document.getElementById('lockPinError').textContent = '';
+    showLockPanelA();
+    document.getElementById('lockModal').classList.add('open');
+}
+function closeLockModal(){
+    document.getElementById('lockModal').classList.remove('open');
+    _lockTargetOi = null;
+}
+function showLockPanelA(){
+    document.getElementById('lockPanelA').style.display = '';
+    document.getElementById('lockPanelB').style.display = 'none';
+}
+function showPinSetup(){
+    document.getElementById('lockPanelA').style.display = 'none';
+    document.getElementById('lockPanelB').style.display = '';
+    document.getElementById('lockPinError').textContent = '';
+    setTimeout(()=>document.getElementById('lockPinInput').focus(), 60);
+}
+
+/* PINなしロック */
+function lockNoPIN(){
+    if(_lockTargetOi === null) return;
+    listData[_lockTargetOi].locked  = true;
+    listData[_lockTargetOi].lockPin = null;
+    save(); draw();
+    closeLockModal();
+    showToast('🔒 カードをロックしました','info');
+}
+
+/* PIN付きロック */
+function applyLockWithPin(){
+    const pin  = document.getElementById('lockPinInput').value.trim();
+    const conf = document.getElementById('lockPinConfirm').value.trim();
+    const errEl = document.getElementById('lockPinError');
+    if(!/^\d{4}$/.test(pin)){
+        _showLockErr(errEl, [document.getElementById('lockPinInput')], '4桁の数字を入力してください'); return;
+    }
+    if(pin !== conf){
+        _showLockErr(errEl, [document.getElementById('lockPinInput'), document.getElementById('lockPinConfirm')], 'PINが一致しません'); return;
+    }
+    if(_lockTargetOi === null) return;
+    listData[_lockTargetOi].locked  = true;
+    listData[_lockTargetOi].lockPin = hashPin(pin);
+    save(); draw();
+    closeLockModal();
+    showToast('🔒 PINでカードをロックしました','info');
+}
+
+/* ─ ロック解除モーダル ─ */
+function openUnlockModal(oi){
+    _lockTargetOi = oi;
+    const hasPin = !!listData[oi]?.lockPin;
+    document.getElementById('unlockPinInput').value = '';
+    document.getElementById('unlockPinError').textContent = '';
+    document.getElementById('unlockPinInput').style.display = hasPin ? '' : 'none';
+    document.getElementById('unlockModalDesc').textContent  = hasPin
+        ? 'PINを入力してください'
+        : 'このカードのロックを解除しますか？';
+    document.getElementById('unlockModal').classList.add('open');
+    if(hasPin) setTimeout(()=>document.getElementById('unlockPinInput').focus(), 60);
+}
+function closeUnlockModal(){
+    document.getElementById('unlockModal').classList.remove('open');
+    _lockTargetOi = null;
+}
+
+/* 解除実行 */
+function tryUnlockWithPin(){
+    if(_lockTargetOi === null) return;
+    const hasPin = !!listData[_lockTargetOi]?.lockPin;
+    if(!hasPin){
+        listData[_lockTargetOi].locked  = false;
+        listData[_lockTargetOi].lockPin = null;
+        save(); draw();
+        closeUnlockModal();
+        showToast('🔓 ロックを解除しました','info');
+        return;
+    }
+    const pin   = document.getElementById('unlockPinInput').value.trim();
+    const errEl = document.getElementById('unlockPinError');
+    if(!/^\d{4}$/.test(pin)){
+        _showLockErr(errEl, [document.getElementById('unlockPinInput')], '4桁の数字を入力してください'); return;
+    }
+    if(hashPin(pin) !== listData[_lockTargetOi].lockPin){
+        _showLockErr(errEl, [document.getElementById('unlockPinInput')], 'PINが違います'); return;
+    }
+    listData[_lockTargetOi].locked  = false;
+    listData[_lockTargetOi].lockPin = null;
+    save(); draw();
+    closeUnlockModal();
+    showToast('🔓 ロックを解除しました','info');
+}
+
+/* エラー演出（共通） */
+function _showLockErr(errEl, inputs, msg){
+    errEl.textContent = msg;
+    inputs.forEach(inp=>{
+        inp.classList.add('error');
+        setTimeout(()=>inp.classList.remove('error'), 400);
+    });
+}
 
 /* ④ インポート */
 function openImportModal(){document.getElementById("importModal").classList.add('open');}
