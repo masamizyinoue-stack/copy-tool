@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.46</title>
+<title>Kopipe_Tool 製品版Vr1.1.47</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -2449,10 +2449,10 @@ function draw(){
         /* 書き出しボタン（共有） */
         const shBtn=document.createElement("button");
         shBtn.className="footer-btn btn-share";
-        shBtn.innerHTML="引継ぎ登録";
+        shBtn.innerHTML="引継登録";
         shBtn.style.fontSize="11px";
-        shBtn.title="このカードのラベル・カラーを引き継いで新規登録（カード書き出し）";
-        shBtn.onclick=(e)=>{ e.stopPropagation(); exportCardsAsJsonPicker([listData[item.originalIndex]]); };
+        shBtn.title="このカードのラベル・カラーを引き継いで新規登録";
+        shBtn.onclick=(e)=>{ e.stopPropagation(); inheritRegister(item.originalIndex); };
 
         footer.append(badge,cpBtn,edBtn,shBtn,deBtn);
 
