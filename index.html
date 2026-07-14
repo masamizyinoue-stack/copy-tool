@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.47</title>
+<title>Kopipe_Tool 製品版Vr1.1.50</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -1122,6 +1122,26 @@ body.compact .card-num-badge{font-size:10px;padding:1px 5px;bottom:5px;right:5px
                     <div class="color-dot"        data-c="white"  onclick="selectColor('white')"  title="ホワイト" style="background:#8090a8;"></div>
                     <div class="color-dot"        data-c="gray"   onclick="selectColor('gray')"   title="グレー"   style="background:#4a5568;"></div>
                 </div>
+            </div>
+            <!-- 文字色選択 -->
+            <div class="form-row" style="align-items:center;flex-wrap:wrap;gap:10px;">
+                <div class="color-picker-wrap">
+                    <span class="color-label">TEXT COLOR</span>
+                    <div class="color-dot active" data-tc="default"  onclick="selectTextColor(null)"      title="デフォルト（テーマ色）" style="background:var(--pre-text);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--bg);line-height:1;">A</div>
+                    <div class="color-dot" data-tc="#f87171"  onclick="selectTextColor('#f87171')" title="レッド"    style="background:#f87171;"></div>
+                    <div class="color-dot" data-tc="#fb923c"  onclick="selectTextColor('#fb923c')" title="オレンジ"  style="background:#fb923c;"></div>
+                    <div class="color-dot" data-tc="#fbbf24"  onclick="selectTextColor('#fbbf24')" title="イエロー"  style="background:#fbbf24;"></div>
+                    <div class="color-dot" data-tc="#a3e635"  onclick="selectTextColor('#a3e635')" title="ライム"    style="background:#a3e635;"></div>
+                    <div class="color-dot" data-tc="#4ade80"  onclick="selectTextColor('#4ade80')" title="グリーン"  style="background:#4ade80;"></div>
+                    <div class="color-dot" data-tc="#22d3ee"  onclick="selectTextColor('#22d3ee')" title="シアン"    style="background:#22d3ee;"></div>
+                    <div class="color-dot" data-tc="#60a5fa"  onclick="selectTextColor('#60a5fa')" title="ブルー"    style="background:#60a5fa;"></div>
+                    <div class="color-dot" data-tc="#c084fc"  onclick="selectTextColor('#c084fc')" title="パープル"  style="background:#c084fc;"></div>
+                    <div class="color-dot" data-tc="#f472b6"  onclick="selectTextColor('#f472b6')" title="ピンク"    style="background:#f472b6;"></div>
+                    <div class="color-dot" data-tc="#f9fafb"  onclick="selectTextColor('#f9fafb')" title="ホワイト"  style="background:#f9fafb;"></div>
+                    <div class="color-dot" data-tc="#9ca3af"  onclick="selectTextColor('#9ca3af')" title="グレー"    style="background:#9ca3af;"></div>
+                </div>
+            </div>
+            <div class="form-row" style="align-items:center;flex-wrap:wrap;gap:10px;">
                 <input type="hidden" id="editIdx" value="-1">
                 <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                     <button id="btnSubmit" class="btn btn-save" onclick="handleSave()">登録する</button>
@@ -1370,6 +1390,8 @@ let currentFilterA = new Set(['ALL']); // 複数選択対応
 let currentFilterB = new Set(['ALL']); // 複数選択対応
 let currentFilterColor = 'ALL';
 let selectedColor  = 'blue';
+let selectedTextColor = null; // null = デフォルト（テーマ色）
+
 let isSecretMode   = false;
 let pwModalMode    = 'unlock';
 // selectedCardIdx 廃止（光る選択を削除）
@@ -1767,7 +1789,13 @@ function forceCloseEditor(){
 /* ⑤ カード色選択 */
 function selectColor(c){
     selectedColor=c;
-    document.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('active',d.dataset.c===c));
+    document.querySelectorAll('.color-dot[data-c]').forEach(d=>d.classList.toggle('active',d.dataset.c===c));
+}
+function selectTextColor(hex){
+    selectedTextColor = hex;
+    document.querySelectorAll('.color-dot[data-tc]').forEach(d=>{
+        d.classList.toggle('active', hex===null ? d.dataset.tc==='default' : d.dataset.tc===hex);
+    });
 }
 
 /* ─ 保存処理 ─ */
@@ -1778,10 +1806,10 @@ function handleSave(){
     const editIdx=parseInt(document.getElementById("editIdx").value);
     if(!text&&!a&&!b)return;
     if(editIdx===-1){
-        listData.push({text,a,b,pinned:false,ts:Date.now(),updatedAt:Date.now(),copyCount:0,color:selectedColor});
+        listData.push({text,a,b,pinned:false,ts:Date.now(),updatedAt:Date.now(),copyCount:0,color:selectedColor,textColor:selectedTextColor||null});
         showToast('✅ 登録しました');
     }else{
-        listData[editIdx]={...listData[editIdx],text,a,b,color:selectedColor,updatedAt:Date.now()};
+        listData[editIdx]={...listData[editIdx],text,a,b,color:selectedColor,textColor:selectedTextColor||null,updatedAt:Date.now()};
         showToast('✏️ 更新しました');
     }
     stopEditTracking(); // 変更追跡を停止してリスナーを解除
@@ -1797,6 +1825,7 @@ function clearForm(){
     document.getElementById("editIdx").value="-1";
     document.getElementById("btnSubmit").textContent="登録する";
     selectColor('blue');
+    selectTextColor(null);
 }
 
 /* ─ ソート（永続化あり） ─ */
@@ -2294,6 +2323,7 @@ function draw(){
         const pre=document.createElement("pre");
         pre.title="クリックでコピー";
         pre.style.cursor='copy';
+        if(item.textColor) pre.style.color = item.textColor;
         // ホバー全文プレビュー：300ms遅延でちらつき防止、クリック時は即非表示
         let _preHoverTimer = null;
         pre.addEventListener('mouseenter', ()=>{
@@ -2420,6 +2450,7 @@ function draw(){
             document.getElementById("editIdx").value=item.originalIndex;
             document.getElementById("btnSubmit").textContent="上書き保存";
             selectColor(item.color||'blue');
+            selectTextColor(item.textColor||null);
             document.getElementById("editorPanel").style.display='block';
             window.scrollTo({top:0,behavior:'smooth'});
             requestAnimationFrame(()=>autoResizeTextarea(ta));
@@ -3286,6 +3317,7 @@ function duplicateToEditor(oi){
     document.getElementById('editIdx').value='-1'; // 新規登録扱い
     document.getElementById('btnSubmit').textContent='登録する';
     selectColor(src.color||'blue'); // カードカラー引き継ぎ
+    selectTextColor(src.textColor||null); // 文字色引き継ぎ
     const panel=document.getElementById('editorPanel');
     panel.style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});
