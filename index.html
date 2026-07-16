@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.50</title>
+<title>Kopipe_Tool 製品版Vr1.1.51</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -3538,6 +3538,7 @@ function showPrePreview(text, el){
     if(!div) return;
     const isCompact = document.body.classList.contains('compact');
     div.innerHTML = '';
+
     // バッジ（文字数・行数）
     const badge = document.createElement('div');
     badge.className = 'pre-preview-badge';
@@ -3545,44 +3546,72 @@ function showPrePreview(text, el){
     badge.innerHTML = '<span class="pv-chars">' + text.length.toLocaleString() + ' 文字</span>'
         + '<span class="pv-hint">' + lineCount + ' 行　ホイールでスクロール</span>';
     div.appendChild(badge);
+
     // 本文
     const body = document.createElement('div');
     body.className = 'pre-preview-body';
     body.textContent = text;
     div.appendChild(body);
-    div.style.width = isCompact ? '340px' : '440px';
+    div.style.width = isCompact ? '320px' : '420px';
     div.style.maxWidth = 'calc(100vw - 24px)';
 
     // 一時表示してサイズ取得
-    div.style.visibility='hidden';
+    div.style.visibility = 'hidden';
     div.classList.add('active');
     const dw = div.offsetWidth  || 380;
     const dh = div.offsetHeight || 200;
-    div.style.visibility='';
+    div.style.visibility = '';
 
-    const r  = el.getBoundingClientRect();
+    // ★ preではなくカード全体を基準にする
+    const card = el.closest('.card') || el;
+    const r  = card.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const margin = 10;
+    const mg = 10; // プレビューとカードの隙間
+
+    // 各方向の空きスペース
+    const spaceBelow = vh - r.bottom - mg;
+    const spaceAbove = r.top - mg;
+    const spaceRight = vw - r.right - mg;
+    const spaceLeft  = r.left - mg;
+
+    // 横方向: カード左端を基準にはみ出さないよう調整
+    const xAligned = Math.min(Math.max(mg, r.left), vw - dw - mg);
+    // 縦方向: カード上端を基準にはみ出さないよう調整
+    const yAligned = Math.min(Math.max(mg, r.top), vh - dh - mg);
 
     let left, top;
-    const rightSpace = vw - r.right - margin;
-    const leftSpace  = r.left - margin;
 
-    if(rightSpace >= dw + margin){
-        left = r.right + margin;
-    } else if(leftSpace >= dw + margin){
-        left = r.left - dw - margin;
+    if(spaceBelow >= dh){
+        // 下に十分な空きがある → カードの真下
+        top  = r.bottom + mg;
+        left = xAligned;
+    } else if(spaceRight >= dw){
+        // 右に十分な空きがある → カードの右横
+        left = r.right + mg;
+        top  = yAligned;
+    } else if(spaceLeft >= dw){
+        // 左に十分な空きがある → カードの左横
+        left = r.left - dw - mg;
+        top  = yAligned;
+    } else if(spaceAbove >= dh){
+        // 上に十分な空きがある → カードの真上
+        top  = r.top - dh - mg;
+        left = xAligned;
     } else {
-        left = Math.max(margin, (vw - dw) / 2);
+        // どこも狭い → 画面中央（カードから最も遠い側に寄せる）
+        const cardCenterX = (r.left + r.right) / 2;
+        const cardCenterY = (r.top  + r.bottom) / 2;
+        left = cardCenterX < vw / 2
+            ? Math.min(vw - dw - mg, vw * 0.55)   // カードが左半分なら右側に
+            : Math.max(mg, vw * 0.05);             // カードが右半分なら左側に
+        top = cardCenterY < vh / 2
+            ? Math.min(vh - dh - mg, vh * 0.55)   // カードが上半分なら下側に
+            : Math.max(mg, vh * 0.05);             // カードが下半分なら上側に
     }
 
-    top = r.top;
-    if(top + dh > vh - margin) top = Math.max(margin, vh - dh - margin);
-    top = Math.max(margin, top);
-
-    div.style.top  = top  + 'px';
-    div.style.left = left + 'px';
+    div.style.left = Math.round(left) + 'px';
+    div.style.top  = Math.round(top)  + 'px';
 }
 function hidePrePreview(){
     const div = document.getElementById('prePreview');
