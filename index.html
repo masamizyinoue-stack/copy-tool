@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kopipe_Tool 製品版Vr1.1.51</title>
+<title>Kopipe_Tool 製品版Vr1.1.52</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -3582,11 +3582,7 @@ function showPrePreview(text, el){
 
     let left, top;
 
-    if(spaceBelow >= dh){
-        // 下に十分な空きがある → カードの真下
-        top  = r.bottom + mg;
-        left = xAligned;
-    } else if(spaceRight >= dw){
+    if(spaceRight >= dw){
         // 右に十分な空きがある → カードの右横
         left = r.right + mg;
         top  = yAligned;
@@ -3594,6 +3590,10 @@ function showPrePreview(text, el){
         // 左に十分な空きがある → カードの左横
         left = r.left - dw - mg;
         top  = yAligned;
+    } else if(spaceBelow >= dh){
+        // 下に十分な空きがある → カードの真下
+        top  = r.bottom + mg;
+        left = xAligned;
     } else if(spaceAbove >= dh){
         // 上に十分な空きがある → カードの真上
         top  = r.top - dh - mg;
